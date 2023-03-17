@@ -1,9 +1,10 @@
 use bitcoin_bech32::constants::Network;
 use bitcoin_bech32::WitnessProgram;
-use bytecode::Bytecode::*;
-use preamble::*;
 
-#[derive(PartialEq, Clone, Debug)]
+use crate::preamble::Bytecode::*;
+use crate::preamble::*;
+
+#[derive(PartialEq, Eq, Clone, Debug)]
 pub enum HighLevel<'a> {
     PayToPubkey(&'a [u8]),
     PayToPubkeyHash(&'a [u8; 20]),
@@ -62,7 +63,7 @@ impl<'a> Script<'a> {
         self.slice
     }
 
-    pub fn to_highlevel(&self) -> HighLevel<'a> {
+    pub fn to_highlevel(self) -> HighLevel<'a> {
         let mut skipped_iter = self.iter();
         skipped_iter.skip_nops();
         let skipped_slice = skipped_iter.slice;
@@ -72,34 +73,32 @@ impl<'a> Script<'a> {
                 return HighLevel::Donation;
             }
             22 => {
-                if self.timestamp >= 1503539857 {
-                    if &self.slice[..2] == &[0x00, 0x14] {
-                        return match WitnessProgram::from_scriptpubkey(
-                            &self.slice[..22],
-                            Network::Bitcoin,
-                        ) {
-                            Ok(w) => HighLevel::PayToWitnessPubkeyHash(w),
-                            Err(_) => HighLevel::Invalid,
-                        };
-                    }
+                if self.timestamp >= 1503539857 && self.slice[..2] == [0x00, 0x14] {
+                    return match WitnessProgram::from_scriptpubkey(
+                        &self.slice[..22],
+                        Network::Bitcoin,
+                    ) {
+                        Ok(w) => HighLevel::PayToWitnessPubkeyHash(w),
+                        Err(_) => HighLevel::Invalid,
+                    };
                 }
             }
             23 => {
-                if &skipped_slice[..2] == &[0xa6, 0x14] && skipped_slice[22] == 0x87 {
+                if skipped_slice[..2] == [0xa6, 0x14] && skipped_slice[22] == 0x87 {
                     return HighLevel::Challenge(ChallengeType::Ripemd160(array_ref!(
                         skipped_slice,
                         2,
                         20
                     )));
                 }
-                if &skipped_slice[..2] == &[0xa7, 0x14] && skipped_slice[22] == 0x87 {
+                if skipped_slice[..2] == [0xa7, 0x14] && skipped_slice[22] == 0x87 {
                     return HighLevel::Challenge(ChallengeType::Sha1(array_ref!(
                         skipped_slice,
                         2,
                         20
                     )));
                 }
-                if &skipped_slice[..2] == &[0xa9, 0x14] && skipped_slice[22] == 0x87 {
+                if skipped_slice[..2] == [0xa9, 0x14] && skipped_slice[22] == 0x87 {
                     return HighLevel::Challenge(ChallengeType::Hash160(array_ref!(
                         skipped_slice,
                         2,
@@ -108,36 +107,35 @@ impl<'a> Script<'a> {
                 }
             }
             25 => {
-                if &skipped_slice[..3] == &[0x76, 0xa9, 0x14]
-                    && (&skipped_slice[23..] == &[0x88, 0xac]
-                        || &skipped_slice[23..] == &[0x88, 0xac, 0x61])
+                if skipped_slice[..3] == [0x76, 0xa9, 0x14]
+                    && (skipped_slice[23..] == [0x88, 0xac]
+                        || skipped_slice[23..] == [0x88, 0xac, 0x61])
                 {
                     return HighLevel::PayToPubkeyHash(array_ref!(skipped_slice, 3, 20));
                 }
-                if self.timestamp >= 1333238400 {
-                    if &self.slice[..2] == &[0xa9, 0x14] && self.slice[22] == 0x87 {
-                        return HighLevel::PayToScriptHash(array_ref!(self.slice, 2, 20));
-                    }
+                if self.timestamp >= 1333238400
+                    && self.slice[..2] == [0xa9, 0x14]
+                    && self.slice[22] == 0x87
+                {
+                    return HighLevel::PayToScriptHash(array_ref!(self.slice, 2, 20));
                 }
             }
             26 => {
-                if &skipped_slice[..3] == &[0x76, 0xa9, 0x14]
-                    && &skipped_slice[23..] == &[0x88, 0xac, 0x61]
+                if skipped_slice[..3] == [0x76, 0xa9, 0x14]
+                    && skipped_slice[23..] == [0x88, 0xac, 0x61]
                 {
                     return HighLevel::PayToPubkeyHash(array_ref!(skipped_slice, 3, 20));
                 }
             }
             34 => {
-                if self.timestamp >= 1503539857 {
-                    if &self.slice[..2] == &[0x00, 0x20] {
-                        return match WitnessProgram::from_scriptpubkey(
-                            &self.slice[..34],
-                            Network::Bitcoin,
-                        ) {
-                            Ok(w) => HighLevel::PayToWitnessScriptHash(w),
-                            Err(_) => HighLevel::Invalid,
-                        };
-                    }
+                if self.timestamp >= 1503539857 && self.slice[..2] == [0x00, 0x20] {
+                    return match WitnessProgram::from_scriptpubkey(
+                        &self.slice[..34],
+                        Network::Bitcoin,
+                    ) {
+                        Ok(w) => HighLevel::PayToWitnessScriptHash(w),
+                        Err(_) => HighLevel::Invalid,
+                    };
                 }
             }
             35 => {
@@ -149,14 +147,14 @@ impl<'a> Script<'a> {
                         return HighLevel::Invalid;
                     }
                 }
-                if &skipped_slice[..2] == &[0xa8, 0x20] && skipped_slice[34] == 0x87 {
+                if skipped_slice[..2] == [0xa8, 0x20] && skipped_slice[34] == 0x87 {
                     return HighLevel::Challenge(ChallengeType::Sha256(array_ref!(
                         skipped_slice,
                         2,
                         32
                     )));
                 }
-                if &skipped_slice[..2] == &[0xaa, 0x20] && skipped_slice[34] == 0x87 {
+                if skipped_slice[..2] == [0xaa, 0x20] && skipped_slice[34] == 0x87 {
                     return HighLevel::Challenge(ChallengeType::Hash256(array_ref!(
                         skipped_slice,
                         2,
@@ -190,20 +188,20 @@ impl<'a> Script<'a> {
             return HighLevel::DataOutput(&skipped_slice[2..2 + data_len]);
         }
 
-        if skipped_slice == b"script" || skipped_slice == &[0x76, 0xa9, 0x00, 0x88, 0xac] {
+        if skipped_slice == b"script" || skipped_slice == [0x76, 0xa9, 0x00, 0x88, 0xac] {
             return HighLevel::Invalid;
         }
 
         if skipped_slice == b"vvv"
             || skipped_slice == b"v"
-            || skipped_slice == &[0x53, 0x87]
-            || skipped_slice == &[0x82]
+            || skipped_slice == [0x53, 0x87]
+            || skipped_slice == [0x82]
         {
             return HighLevel::Donation;
         }
 
         {
-            let mut skipped_iter = skipped_iter.clone();
+            let mut skipped_iter = skipped_iter;
             match skipped_iter.read() {
                 Ok(OP_PUSH(bytes)) => match skipped_iter.read() {
                     Err(ParseError::Eof) => {
@@ -248,12 +246,10 @@ impl<'a> Script<'a> {
                                     if skipped_iter.slice.is_empty() {
                                         assert!(!is_valid_pubkey(bytes));
                                         return HighLevel::Invalid;
-                                    } else {
-                                        if skipped_iter.slice.iter().all(|b| *b == 0xac)
-                                            || skipped_slice == &[0]
-                                        {
-                                            return HighLevel::Invalid;
-                                        }
+                                    } else if skipped_iter.slice.iter().all(|b| *b == 0xac)
+                                        || skipped_slice == [0]
+                                    {
+                                        return HighLevel::Invalid;
                                     }
                                 }
                                 Err(ParseError::Eof) => {
@@ -285,7 +281,7 @@ impl<'a> Script<'a> {
         }
 
         {
-            let mut skipped_iter = skipped_iter.clone();
+            let mut skipped_iter = skipped_iter;
             let mut nest_level = 0;
             loop {
                 match skipped_iter.read() {
@@ -313,7 +309,7 @@ impl<'a> Script<'a> {
             }
         }
 
-        HighLevel::Unknown(*self)
+        HighLevel::Unknown(self)
     }
 }
 
@@ -326,10 +322,11 @@ impl<'a> ScriptIter<'a> {
         loop {
             let saved = self.slice;
             match self.read() {
-                Ok(OP_PUSH(_)) | Ok(OP_DUP) => match self.read() {
-                    Ok(OP_DROP) => continue,
-                    _ => {}
-                },
+                Ok(OP_PUSH(_)) | Ok(OP_DUP) => {
+                    if let Ok(OP_DROP) = self.read() {
+                        continue;
+                    }
+                }
                 Ok(OP_DROP) | Ok(OP_MIN) | Ok(OP_CHECKSIG) | Ok(OP_CHECKMULTISIG) => continue,
                 _ => {}
             }
@@ -414,12 +411,10 @@ pub fn is_valid_pubkey(pubkey: &[u8]) -> bool {
         return false;
     }
 
-    match (pubkey[0], pubkey.len()) {
-        (0x02, 33) => true,
-        (0x03, 33) => true,
-        (0x04, 65) => true,
-        _ => false,
-    }
+    matches!(
+        (pubkey[0], pubkey.len()),
+        (0x02, 33) | (0x03, 33) | (0x04, 65)
+    )
 }
 
 pub fn bytes_to_bool(bytes: &[u8]) -> bool {

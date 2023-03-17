@@ -1,7 +1,9 @@
-use base58::ToBase58;
-use hash::Hash;
-use hash160::Hash160;
 use std::fmt;
+
+use base58::ToBase58;
+
+use crate::hash160::Hash160;
+use crate::Hash;
 
 #[derive(PartialEq, Eq, Debug, Clone, Default, Hash, Ord, PartialOrd)]
 pub struct Address(pub String);
@@ -15,7 +17,7 @@ impl fmt::Display for Address {
 impl Address {
     pub fn from_pubkey(pubkey: &[u8], version: u8) -> Address {
         let hash160 = Hash160::from_data(pubkey);
-        return Address::from_hash160(&hash160, version);
+        Address::from_hash160(&hash160, version)
     }
 
     pub fn from_hash160(hash160: &Hash160, version: u8) -> Address {

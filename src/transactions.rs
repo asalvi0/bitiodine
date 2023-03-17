@@ -1,6 +1,15 @@
+use std::collections::HashMap;
+
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
-use preamble::*;
+use vec_map::VecMap;
+
+use crate::buffer_operations::{read_slice, read_u32, read_u64, read_u8, read_var_int};
+use crate::error::{ParseError, ParseResult};
+use crate::preamble::*;
+use crate::preamble::{HashEntry, Script};
+use crate::visitors::BlockChainVisitor;
+use crate::Hash;
 
 #[derive(PartialEq, Eq, Debug, Clone, Copy)]
 pub struct Transactions<'a> {
@@ -111,7 +120,7 @@ impl<'a> Transaction<'a> {
             let mut output_item = None;
             if let HashEntry::Occupied(mut occupied) = output_items.entry(*i.prev_hash) {
                 output_item = occupied.get_mut().remove(i.prev_index as usize);
-                if occupied.get().len() == 0 {
+                if occupied.get().is_empty() {
                     occupied.remove();
                 }
             }
@@ -166,7 +175,7 @@ impl<'a> Transaction<'a> {
             slice: read_slice(&mut init_slice, init_slice_len - slice.len())?,
         };
 
-        if cur_output_items.len() > 0 {
+        if !cur_output_items.is_empty() {
             let len = cur_output_items.len();
             cur_output_items.reserve_len_exact(len);
             output_items.insert(*Hash::from_slice(&tx_hash), cur_output_items);

@@ -1,4 +1,8 @@
-use preamble::*;
+use crate::block::Block;
+use crate::preamble::*;
+use crate::transactions::TransactionOutput;
+use crate::visitors::BlockChainVisitor;
+use crate::HighLevel;
 
 pub struct DataOutputFinder;
 
@@ -23,7 +27,7 @@ impl<'a> BlockChainVisitor<'a> for DataOutputFinder {
         _transaction_item: &mut (),
     ) -> Option<Self::OutputItem> {
         match txout.script.to_highlevel() {
-            HighLevel::DataOutput(data) => Some(String::from_utf8_lossy(&data).into_owned()),
+            HighLevel::DataOutput(data) => Some(String::from_utf8_lossy(data).into_owned()),
             _ => None,
         }
     }

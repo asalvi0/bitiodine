@@ -1,4 +1,7 @@
-use preamble::*;
+use crate::buffer_operations::{read_slice, read_u16, read_u32, read_u8};
+use crate::error::{ParseError, ParseResult};
+
+pub use self::Bytecode::*;
 
 #[derive(PartialEq, Eq, Clone, Copy, Debug)]
 #[allow(non_camel_case_types)]
@@ -249,8 +252,6 @@ pub enum Bytecode<'a> {
     // 0xb1
     OP_CHECKLOCKTIMEVERIFY,
 }
-
-pub use self::Bytecode::*;
 
 impl<'a> Bytecode<'a> {
     fn read_raw(slice: &mut &'a [u8], height: u64) -> ParseResult<Bytecode<'a>> {

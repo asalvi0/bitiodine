@@ -1,4 +1,10 @@
-use preamble::*;
+use crate::block::Block;
+use crate::hash::ZERO_HASH;
+use crate::hash160::Hash160;
+use crate::preamble::*;
+use crate::transactions::{TransactionInput, TransactionOutput};
+use crate::visitors::BlockChainVisitor;
+use crate::{Address, HighLevel};
 
 pub struct DumpBalances {
     balances: HashMap<(Address, Option<Hash160>), i64>,
@@ -34,23 +40,17 @@ impl<'a> BlockChainVisitor<'a> for DumpBalances {
             return;
         }
 
-        match output_item {
-            Some((address, hash160, value)) => {
-                let prev_balance = self
-                    .balances
-                    .get(&(address.to_owned(), hash160))
-                    .unwrap_or(&0)
-                    .to_owned();
-                if prev_balance == value {
-                    self.balances.remove(&(address.to_owned(), hash160));
-                } else {
-                    *self
-                        .balances
-                        .entry((address.to_owned(), hash160))
-                        .or_insert(0) -= value;
-                }
+        if let Some((address, hash160, value)) = output_item {
+            let prev_balance = self
+                .balances
+                .get(&(address.to_owned(), hash160))
+                .unwrap_or(&0)
+                .to_owned();
+            if prev_balance == value {
+                self.balances.remove(&(address, hash160));
+            } else {
+                *self.balances.entry((address, hash160)).or_insert(0) -= value;
             }
-            None => {}
         }
     }
 

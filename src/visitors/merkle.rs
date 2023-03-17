@@ -1,5 +1,9 @@
-use merkle::MerkleHasher;
-use preamble::*;
+use crate::block::Block;
+use crate::merkle::MerkleHasher;
+use crate::preamble::*;
+use crate::transactions::Transaction;
+use crate::visitors::BlockChainVisitor;
+use crate::Hash;
 
 pub struct MerkleVisitor;
 

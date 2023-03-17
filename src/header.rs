@@ -1,4 +1,7 @@
-use preamble::*;
+use byteorder::ReadBytesExt;
+
+use crate::preamble::*;
+use crate::Hash;
 
 #[derive(Clone, Copy)]
 pub struct BlockHeader<'a>(&'a [u8; 80]);
@@ -9,7 +12,7 @@ impl<'a> BlockHeader<'a> {
     }
 
     pub fn as_slice(&self) -> &'a [u8; 80] {
-        &self.0
+        self.0
     }
 
     pub fn version(&self) -> i32 {

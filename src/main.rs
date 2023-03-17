@@ -6,15 +6,29 @@ extern crate byteorder;
 extern crate chrono;
 extern crate clap;
 extern crate crypto;
+extern crate env_logger;
+#[macro_use]
+extern crate log;
 extern crate memmap;
 extern crate rustc_serialize;
 extern crate time;
 extern crate vec_map;
 extern crate void;
 
-extern crate env_logger;
-#[macro_use]
-extern crate log;
+use std::fs::File;
+use std::io::{LineWriter, Write};
+
+use clap::{Arg, Command};
+use env_logger::Builder;
+use log::LevelFilter;
+
+pub use address::Address;
+use blockchain::BlockChain;
+pub use hash::Hash;
+pub use header::BlockHeader;
+pub use script::HighLevel;
+use visitors::clusterizer::Clusterizer;
+use visitors::BlockChainVisitor;
 
 #[macro_use]
 mod buffer_operations;
@@ -33,22 +47,7 @@ mod script;
 mod transactions;
 pub mod visitors;
 
-use blockchain::BlockChain;
-use clap::{Arg, Command};
-use env_logger::Builder;
-use log::LevelFilter;
-use visitors::clusterizer::Clusterizer;
-use visitors::BlockChainVisitor;
-
-use std::fs::File;
-use std::io::{LineWriter, Write};
-
-pub use address::Address;
-pub use hash::Hash;
-pub use header::BlockHeader;
-pub use script::HighLevel;
-
-const VERSION: &'static str = env!("CARGO_PKG_VERSION");
+const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 fn initialize_logger(level_filter: LevelFilter) {
     Builder::new()
@@ -98,12 +97,12 @@ fn main() {
             .help("Sets the level of verbosity"))
         .get_matches();
 
-    let level_filter: LevelFilter;
-    match matches.get_count("v") {
-        0 => level_filter = LevelFilter::Info,
-        1 => level_filter = LevelFilter::Debug,
-        2 | _ => level_filter = LevelFilter::Off,
-    }
+    // let level_filter: LevelFilter = match matches.get_count("v") {
+    //     0 => LevelFilter::Info,
+    //     1 => LevelFilter::Debug,
+    //     _ => LevelFilter::Off,
+    // };
+    let level_filter: LevelFilter = LevelFilter::Info;
     initialize_logger(level_filter);
 
     let chain = unsafe { BlockChain::read(matches.get_one::<String>("blocks_dir").unwrap()) };

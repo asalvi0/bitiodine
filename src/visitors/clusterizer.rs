@@ -1,7 +1,13 @@
-use preamble::*;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use std::result;
+
+use crate::block::Block;
+use crate::hash::ZERO_HASH;
+use crate::hash160::Hash160;
+use crate::preamble::*;
+use crate::transactions::{Transaction, TransactionInput, TransactionOutput};
+use crate::visitors::BlockChainVisitor;
+use crate::{Address, HighLevel};
 
 pub struct Clusterizer {
     clusters: DisjointSet<Address>,
@@ -77,29 +83,41 @@ where
     /// Union the subsets to which x and y belong.
     /// If it returns Ok<u32>, it is the tag for unified subset.
     /// If it returns Err(), at least one of x and y is not in the disjoint-set.
-    pub fn union(&mut self, x: &T, y: &T) -> result::Result<usize, ()> {
-        let x_root;
-        let y_root;
-        let x_rank;
-        let y_rank;
-        match self.find(&x) {
-            Some(x_r) => {
-                x_root = x_r;
-                x_rank = self.rank[x_root];
+    pub fn union(&mut self, x: &T, y: &T) -> Result<usize> {
+        let mut find = |item: &T| -> Result<(usize, usize)> {
+            match self.find(item) {
+                Some(item_rank) => Ok((item_rank, self.rank[item_rank])),
+                None => Err(EofError),
             }
-            None => {
-                return Err(());
-            }
-        }
+        };
+        let (x_root, x_rank) = find(x)?;
+        let (y_root, y_rank) = find(y)?;
 
-        match self.find(&y) {
-            Some(y_r) => {
-                y_root = y_r;
-                y_rank = self.rank[y_root];
-            }
-            None => {
-                return Err(());
-            }
+        {
+            // let x_root;
+            // let x_rank;
+            // let y_root;
+            // let y_rank;
+
+            // match self.find(&x) {
+            //     Some(x_r) => {
+            //         x_root = x_r;
+            //         x_rank = self.rank[x_root];
+            //     }
+            //     None => {
+            //         return Err(());
+            //     }
+            // }
+
+            // match self.find(&y) {
+            //     Some(y_r) => {
+            //         y_root = y_r;
+            //         y_rank = self.rank[y_root];
+            //     }
+            //     None => {
+            //         return Err(());
+            //     }
+            // }
         }
 
         // Implements union-by-rank optimization.
@@ -109,13 +127,13 @@ where
 
         if x_rank > y_rank {
             self.parent[y_root] = x_root;
-            return Ok(x_root);
+            Ok(x_root)
         } else {
             self.parent[x_root] = y_root;
             if x_rank == y_rank {
                 self.rank[y_root] += 1;
             }
-            return Ok(y_root);
+            Ok(y_root)
         }
     }
 
@@ -159,11 +177,8 @@ impl<'a> BlockChainVisitor<'a> for Clusterizer {
         if txin.prev_hash == &ZERO_HASH {
             return;
         }
-        match output_item {
-            Some(address) => {
-                tx_item.insert(address);
-            }
-            None => {}
+        if let Some(address) = output_item {
+            tx_item.insert(address);
         }
     }
 
@@ -201,7 +216,7 @@ impl<'a> BlockChainVisitor<'a> for Clusterizer {
             for address in tx_inputs_iter {
                 self.clusters.make_set(address.to_owned());
                 let _ = self.clusters.union(last_address, address);
-                last_address = &address;
+                last_address = address;
             }
         }
     }

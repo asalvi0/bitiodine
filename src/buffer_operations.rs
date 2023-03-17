@@ -1,4 +1,4 @@
-use preamble::*;
+use crate::preamble::*;
 
 pub fn read_slice<'a>(slice: &mut &'a [u8], len: usize) -> Result<&'a [u8]> {
     if slice.len() < len {
@@ -13,12 +13,12 @@ pub fn read_slice<'a>(slice: &mut &'a [u8], len: usize) -> Result<&'a [u8]> {
 
 macro_rules! read_array {
     ($slice:expr, $len:expr) => {{
-        ::buffer_operations::read_slice($slice, $len).map(|slice| array_ref!(slice, 0, $len))
+        crate::buffer_operations::read_slice($slice, $len).map(|slice| array_ref!(slice, 0, $len))
     }};
 }
 
 pub fn read_u8(slice: &mut &[u8]) -> Result<u8> {
-    if slice.len() == 0 {
+    if slice.is_empty() {
         Err(EofError)
     } else {
         let res = slice[0];

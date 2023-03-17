@@ -1,4 +1,6 @@
-use preamble::*;
+use crate::block::Block;
+use crate::preamble::*;
+use crate::transactions::{Transaction, TransactionInput, TransactionOutput};
 
 pub mod clusterizer;
 pub mod dataoutput_finder;
@@ -23,6 +25,7 @@ pub trait BlockChainVisitor<'a> {
         &mut self,
         _block_item: &mut Self::BlockItem,
     ) -> Self::TransactionItem;
+
     fn visit_transaction_input(
         &mut self,
         _txin: TransactionInput<'a>,
@@ -40,6 +43,7 @@ pub trait BlockChainVisitor<'a> {
     ) -> Option<Self::OutputItem> {
         None
     }
+
     fn visit_transaction_end(
         &mut self,
         _tx: Transaction<'a>,

@@ -1,4 +1,7 @@
-use preamble::*;
+use crate::block::Block;
+use crate::preamble::*;
+use crate::transactions::Transaction;
+use crate::visitors::BlockChainVisitor;
 
 pub struct DumpTxHashes;
 
@@ -32,7 +35,7 @@ impl<'a> BlockChainVisitor<'a> for DumpTxHashes {
         _tx_item: Self::TransactionItem,
     ) {
         if *block_item > 480000 && *block_item % 1000 == 0 {
-            println!("Transaction {}", tx.txid.to_string());
+            println!("Transaction {}", tx.txid);
         }
     }
 

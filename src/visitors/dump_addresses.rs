@@ -1,4 +1,9 @@
-use preamble::*;
+use crate::block::Block;
+use crate::hash160::Hash160;
+use crate::preamble::*;
+use crate::transactions::TransactionOutput;
+use crate::visitors::BlockChainVisitor;
+use crate::{Address, HighLevel};
 
 pub struct DumpAddresses;
 
@@ -40,11 +45,10 @@ impl<'a> BlockChainVisitor<'a> for DumpAddresses {
             _ => None,
         };
 
-        if addresses.is_some() {
-            for address in addresses.unwrap() {
+        if let Some(addresses_vec) = addresses {
+            for address in addresses_vec {
                 println!("{}", address);
             }
-            Some(());
         }
         None
     }

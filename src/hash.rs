@@ -1,10 +1,11 @@
-use crypto::digest::Digest;
-use crypto::sha2::Sha256;
-use rustc_serialize::hex::{FromHex, ToHex};
 use std::ops::{Deref, DerefMut};
 use std::{fmt, hash, mem};
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone, Default, Ord, PartialOrd)]
+use crypto::digest::Digest;
+use crypto::sha2::Sha256;
+use rustc_serialize::hex::{FromHex, ToHex};
+
+#[derive(Eq, Debug, Copy, Clone, Default, Ord, PartialOrd)]
 pub struct Hash([u8; 32]);
 
 impl fmt::Display for Hash {
@@ -13,6 +14,12 @@ impl fmt::Display for Hash {
         hash.reverse();
         let hash = hash.to_hex();
         hash.fmt(formatter)
+    }
+}
+
+impl PartialEq for Hash {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
 

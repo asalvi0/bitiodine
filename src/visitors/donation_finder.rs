@@ -1,4 +1,8 @@
-use preamble::*;
+use crate::block::Block;
+use crate::preamble::*;
+use crate::transactions::TransactionOutput;
+use crate::visitors::BlockChainVisitor;
+use crate::HighLevel;
 
 pub struct DonationFinder;
 

@@ -1,7 +1,17 @@
 extern crate dirs;
 
+use std::collections::HashMap;
+
+use glob::glob;
 use memmap::Mmap;
-use preamble::*;
+use vec_map::VecMap;
+
+use crate::block::Block;
+use crate::error::ParseResult;
+use crate::hash::ZERO_HASH;
+use crate::preamble::*;
+use crate::visitors::BlockChainVisitor;
+use crate::Hash;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 struct InitIndexEntry<'a> {
@@ -16,14 +26,12 @@ pub struct BlockChain {
 impl BlockChain {
     pub unsafe fn read(blocks_dir: &str) -> BlockChain {
         let mut maps: Vec<Mmap> = Vec::new();
-        let mut n: usize = 0;
-        let blocks_dir_path = PathBuf::from(blocks_dir);
 
-        loop {
-            match File::open(blocks_dir_path.join(format!("blk{:05}.dat", n))) {
-                Ok(f) => {
-                    n += 1;
-                    match Mmap::map(&f) {
+        for entry in glob(&format!("{}{}", blocks_dir, "/blk*.dat")).unwrap() {
+            match entry {
+                Ok(path) => {
+                    let file = File::open(path.display().to_string()).unwrap();
+                    match Mmap::map(&file) {
                         Ok(m) => {
                             maps.push(m);
                         }
@@ -32,11 +40,25 @@ impl BlockChain {
                         }
                     }
                 }
-                Err(_) => {
-                    break;
-                }
-            };
+
+                // if the path matched but was unreadable, thereby preventing its contents from matching
+                Err(e) => println!("{:?}", e),
+            }
         }
+
+        // let blocks_dir_path = PathBuf::from(blocks_dir);
+        // let mut n: usize = 0;
+        // while let Ok(f) = File::open(blocks_dir_path.join(format!("blk{:05}.dat", n))) {
+        //     n += 1;
+        //     match Mmap::map(&f) {
+        //         Ok(m) => {
+        //             maps.push(m);
+        //         }
+        //         Err(_) => {
+        //             break;
+        //         }
+        //     }
+        // }
 
         BlockChain { maps }
     }
@@ -51,7 +73,7 @@ impl BlockChain {
         output_items: &mut HashMap<Hash, VecMap<V::OutputItem>>,
         visitor: &mut V,
     ) -> ParseResult<()> {
-        while slice.len() > 0 {
+        while !slice.is_empty() {
             if skipped.contains_key(goal_prev_hash) {
                 last_block.unwrap().walk(visitor, *height, output_items)?;
                 debug!(
@@ -163,8 +185,8 @@ impl BlockChain {
         for (n, map) in self.maps.iter().enumerate() {
             info!(
                 "Parsing the blockchain: block file {}/{}...",
-                n,
-                self.maps.len() - 1
+                n + 1,
+                self.maps.len()
             );
             self.walk_slice(
                 map,

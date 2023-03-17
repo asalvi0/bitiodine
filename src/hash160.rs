@@ -1,17 +1,24 @@
+use std::ops::{Deref, DerefMut};
+use std::{fmt, hash, mem};
+
 use crypto::digest::Digest;
 use crypto::ripemd160::Ripemd160;
 use crypto::sha2::Sha256;
 use rustc_serialize::hex::{FromHex, ToHex};
-use std::ops::{Deref, DerefMut};
-use std::{fmt, hash, mem};
 
-#[derive(PartialEq, Eq, Debug, Copy, Clone, Default, Ord, PartialOrd)]
+#[derive(Eq, Debug, Copy, Clone, Default, Ord, PartialOrd)]
 pub struct Hash160([u8; 20]);
 
 impl fmt::Display for Hash160 {
     fn fmt(&self, formatter: &mut fmt::Formatter) -> Result<(), fmt::Error> {
         let hash = self.0.to_hex();
         hash.fmt(formatter)
+    }
+}
+
+impl PartialEq for Hash160 {
+    fn eq(&self, other: &Self) -> bool {
+        self.0 == other.0
     }
 }
 

@@ -1,4 +1,4 @@
-use preamble::*;
+use crate::Hash;
 
 #[derive(Clone, Copy, Default)]
 struct MerkleEntry {
@@ -31,10 +31,7 @@ impl MerkleHasher {
             height += 1;
             self.count -= 1;
         }
-        self.hashes[self.count as usize] = MerkleEntry {
-            hash: hash,
-            height: height,
-        };
+        self.hashes[self.count as usize] = MerkleEntry { hash, height };
         self.count += 1;
     }
 
